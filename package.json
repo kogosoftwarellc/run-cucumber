@@ -1,0 +1,27 @@
+{
+  "name": "run-cucumber",
+  "version": "0.5.2",
+  "description": "Run cucumber feature files in parallel",
+  "bin": {
+    "run-cucumber": "./bin/run-cucumber"
+  },
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kogosoftwarellc/run-cucumber.git"
+  },
+  "keywords": [
+    "cucumber",
+    "parallel"
+  ],
+  "author": "Joseph Spencer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kogosoftwarellc/run-cucumber/issues"
+  },
+  "homepage": "https://github.com/kogosoftwarellc/run-cucumber#readme",
+  "dependencies": {
+    "bad": "^0.10.0",
+    "cucumber": "^0.10.4"
+  }
+}

@@ -1,0 +1,173 @@
+#!/bin/bash
+
+set -e
+
+CONCURRENCY='1'
+DEBUG="$DEBUG"
+HR='============================================'
+PROJECT_DIR="$PWD"
+OUTPUT_DIR="$PROJECT_DIR/e2e-output"
+FEATURES=''
+FEATURE_DIR=''
+FORMAT="$FORMAT"
+RUN_ARGS="$RUN_ARGS"
+IS_CUCUMBER_RUN="$IS_CUCUMBER_RUN"
+SUPPORT_FILE=''
+unknownArgs=''
+
+pathToScript="$(dirname $0)/$(node -e "process.stdout.write(require('fs').readlinkSync('$0'))")"
+
+cucumberJs="$(dirname $(dirname "$pathToScript"))/node_modules/.bin/cucumber.js"
+
+function addRunArg() {
+  RUN_ARGS="$RUN_ARGS $1"
+}
+
+function showHelp() {
+cat <<~
+
+run-cucumber
+
+ Options:
+
+   --concurrency     <integer> : The number of concurrent feature files to run in parallel.
+
+   --debug                     : Prints variables used for debugging purposes.
+
+   --feature       <file path> : Path to a feature file.
+
+   --feature-dir    <dir path> : Path to a directory containing .feature files.
+
+   --format           <string> : Currenting "json" is the only supported value.
+
+   -h, --help                  : Prints this menu.
+
+   --output-dir                : Output directory to write test results.  The default location is $OUTPUT_DIR
+
+   --support-file  <file path> : The path to a support file.  Passed as --require for cucumber.js.
+
+   --tags    <tag instruction> : Passed as --tags <tag> to cucumber.js e.g. "--tags ~@skip"
+
+~
+}
+
+if [[ "$DEBUG" == 'true' ]]; then
+    cat <<~
+
+  $HR
+      Debug: $0
+      Env vars
+  $HR
+
+  CONCURRENCY='$CONCURRENCY'
+  IS_CUCUMBER_RUN='$IS_CUCUMBER_RUN'
+  PROJECT_DIR="$PROJECT_DIR"
+  OUTPUT_DIR="$OUTPUT_DIR"
+  FEATURE='$FEATURE'
+  FEATURES='$FEATURES'
+  FEATURE_DIR='$FEATURE_DIR'
+  RUN_ARGS='$RUN_ARGS'
+  unknownArgs='$unknownArgs'
+
+~
+fi
+
+if [[ "$IS_CUCUMBER_RUN" == 'true' ]]; then
+  if [[ "$FORMAT" == 'json' ]]; then
+    $cucumberJs $RUN_ARGS $FEATURE > "$OUTPUT_DIR/cucumber-$(basename "$FEATURE" .feature)-results.json"
+  else
+    $cucumberJs $RUN_ARGS $FEATURE
+  fi
+else
+  while [ "$#" != '0' ];do
+    case "$1" in
+      --concurrency)
+        CONCURRENCY="$2"
+        shift 2
+        ;;
+
+      --debug)
+        DEBUG='true'
+        shift 1
+        ;;
+
+      --feature)
+        FEATURES="$FEATURES $2"
+        shift 2
+        ;;
+
+      --feature-dir)
+        for file in `find "$2" -type f -name '*.feature'`;do
+          FEATURES="$FEATURES $file"
+        done
+        shift 2
+        ;;
+
+      --format)
+        FORMAT="$2"
+        addRunArg "--format=$2"
+        shift 2
+        ;;
+
+      -h|--help)
+        showHelp
+        exit
+        ;;
+
+      --output-dir)
+        OUTPUT_DIR="$2"
+        shift 2
+        ;;
+
+      --support-file)
+        SUPPORT_FILE="$2"
+        shift 2
+        ;;
+
+      --tags)
+        addRunArg "--tags $2"
+        shift 2
+        ;;
+
+      *)
+        unknownArgs="$unknownArgs $1"
+        shift 1
+        ;;
+    esac
+  done
+
+  if [[ -z "$FEATURE" && -z "$FEATURES" ]]; then
+    echo "FEATURES was empty!  Supply some with --feature-dir or --feature!" >&2
+    showHelp
+    exit 1
+  fi
+
+  if [[ -z "$SUPPORT_FILE" ]]; then
+    echo "SUPPORT_FILE was empty!  Provide one with --support-file" >&2
+    showHelp
+    exit 1
+  fi
+
+  if [[ ! -f "$SUPPORT_FILE" ]]; then
+    echo "SUPPORT_FILE didn't point to a file!"
+    showHelp
+    exit 1
+  else
+    addRunArg "--require $SUPPORT_FILE"
+  fi
+
+  rm -rf "$OUTPUT_DIR"
+  mkdir -p "$OUTPUT_DIR/screenshots"
+  mkdir -p "$OUTPUT_DIR/cucumber-results"
+  export DEBUG="$DEBUG"
+  export FORMAT="$FORMAT"
+  export IS_CUCUMBER_RUN='true'
+  export OUTPUT_DIR="$OUTPUT_DIR"
+  export PATH="$(npm bin):$PATH"
+  export RUN_ARGS="$RUN_ARGS"
+  bad --concurrency "$CONCURRENCY" \
+      --exec "$0" \
+      --show-time \
+      --to-env FEATURE \
+      --for "$FEATURES"
+fi
