@@ -19,6 +19,7 @@ pathToScript="$(dirname $0)/$(node -e "process.stdout.write(require('fs').readli
 
 cucumberJs="$(dirname $(dirname "$pathToScript"))/node_modules/.bin/cucumber.js"
 bad="$(dirname $(dirname "$pathToScript"))/node_modules/.bin/bad"
+normalizeOutputFile="$(dirname "$pathToScript")/normalize-result-files.js"
 
 function addRunArg() {
   RUN_ARGS="$RUN_ARGS $1"
@@ -75,7 +76,9 @@ fi
 
 if [[ "$IS_CUCUMBER_RUN" == 'true' ]]; then
   if [[ "$FORMAT" == 'json' ]]; then
-    $cucumberJs $RUN_ARGS $FEATURE > "$OUTPUT_DIR/cucumber-$(basename "$FEATURE" .feature)-results.json"
+    OUTPUT_FILE="$OUTPUT_DIR/cucumber-$(basename "$FEATURE" .feature)-results.json"
+    $cucumberJs $RUN_ARGS $FEATURE > "$OUTPUT_FILE"
+    $normalizeOutputFile "$OUTPUT_FILE"
   else
     $cucumberJs $RUN_ARGS $FEATURE
   fi
