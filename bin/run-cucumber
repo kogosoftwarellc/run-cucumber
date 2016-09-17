@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 CONCURRENCY='1'
 DEBUG="$DEBUG"
 HR='============================================'
