@@ -76,7 +76,9 @@ if [[ "$IS_CUCUMBER_RUN" == 'true' ]]; then
   if [[ "$FORMAT" == 'json' ]]; then
     OUTPUT_FILE="$OUTPUT_DIR/cucumber-$(basename "$FEATURE" .feature)-results.json"
     $cucumberJs $RUN_ARGS $FEATURE > "$OUTPUT_FILE"
+    result=$?
     $normalizeOutputFile "$OUTPUT_FILE"
+    exit $result
   else
     $cucumberJs $RUN_ARGS $FEATURE
   fi
